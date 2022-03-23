@@ -12,6 +12,7 @@ exports.signup = (req, res, next) => {
               password: hash
             });
             //pour enregistrer ds la base de donné
+            console.log(user , ' utilisateur créé');
             user.save()
               .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
               .catch(error => res.status(400).json({ error }));
@@ -47,6 +48,8 @@ exports.login = (req, res, next) => {
                     { expiresIn: '24h' }
                   )
                 });
+                console.log(user);
+
               })
               .catch(error => res.status(500).json({ error }));
           })
