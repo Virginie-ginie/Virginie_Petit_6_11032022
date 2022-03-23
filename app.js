@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const mongoose = require("mongoose");
 const path = require('path');
 
-const stuffRoutes = require('./routes/stuff');
+const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
 mongoose.connect(
@@ -44,36 +44,9 @@ app.use((req, res, next) => {
 app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/api/stuff', stuffRoutes);
+app.use('/api/sauces', saucesRoutes);
 app.use('/api/auth', userRoutes);
 
 //on export notre application 'app'
 module.exports = app;
 
-//***************************INFO DU COURS *******************************
-
-//Le CORS définit comment les serveurs et les navigateurs interagissent, en spécifiant
-//quelles ressources peuvent être demandées de manière légitime – par défaut, les requêtes AJAX sont interdites.
-
-//Pour permettre des requêtes cross-origin (et empêcher des erreurs CORS),
-//des headers spécifiques de contrôle d'accès doivent être précisés pour tous vos objets de réponse.
-
-//Les méthodes de votre modèle Thing permettent d'interagir avec la base de données :
-
-      // save()  – enregistre un Thing ;
-
-      // find()  – retourne tous les Things ;
-
-      // findOne()  – retourne un seul Thing basé sur la fonction de comparaison qu'on lui passe (souvent pour récupérer un Thing par son identifiant unique).
-
-// La méthode  app.get()  permet de réagir uniquement aux requêtes de type GET.
-
-//votre application implémente le CRUD complet :
-
-      // create (création de ressources) ;
-
-      // read (lecture de ressources) ;
-
-      // update (modification de ressources) ;
-
-      // delete (suppression de ressources).
