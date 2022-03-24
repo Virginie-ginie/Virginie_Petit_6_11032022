@@ -9,4 +9,4 @@ module.exports = (req, res, next) => {
             message:  '8 caractères minimum'
         });
     }
-}
+};

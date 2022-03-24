@@ -1,6 +1,6 @@
 //on importe express
 const express = require("express");
-const bodyParser = require('body-parser');
+
 
 // on importe mongoose
 const mongoose = require("mongoose");
@@ -41,7 +41,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(bodyParser.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/sauces', saucesRoutes);
