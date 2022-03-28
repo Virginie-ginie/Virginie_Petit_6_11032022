@@ -1,29 +1,35 @@
-//on importe express
 const express = require("express");
-
-// on importe mongoose
 const mongoose = require("mongoose");
 const path = require("path");
-
+const helmet = require("helmet");
 const saucesRoutes = require("./routes/sauces");
 const userRoutes = require("./routes/user");
-// const rateLimit = require("express-rate-limit");
-// const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+require("dotenv").config();
 
-//importer le package pour utiliser les variables d'environnement
-require('dotenv').config();
+const app = express();
 
-//importer mongoose pour me connecter à la base de donnée mongoDB
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+});
+
+app.use(limiter);
+app.use(helmet({
+  // crossOriginEmbedderPolicy: false,
+  
+    crossOriginResourcePolicy: false
+  
+}));
+
 mongoose
-  .connect(process.env.MONGO,
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
+  .connect(process.env.MONGO, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("Connexion à MongoDB réussie !"))
   .catch(() => console.log("Connexion à MongoDB échouée !"));
 
-// on crée une const pour notre application
-const app = express();
-// app.use(helmet());
 //********************************middleware*******************************************
 
 // on intercepte toutes les requetes qui continenne du JSON et
@@ -48,17 +54,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// const apiLimiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100,
-// });
-
-
-
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/api/sauces", saucesRoutes);
 app.use("/api/auth", userRoutes);
-// app.use("/api/", apiLimiter);
 
 //on export notre application 'app'
 module.exports = app;
