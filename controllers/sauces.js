@@ -23,42 +23,97 @@ exports.createSauce = (req, res, next) => {
     .catch((error) => res.status(400).json({ error }));
 };
 
-// la route pour "modifier"
-exports.modifySauce = (req, res, next) => {
-  const saucesObject = req.file ? {
-        ...JSON.parse(req.body.sauce),
-        imageUrl: `${req.protocol}://${req.get("host")}/images/${
-          req.file.filename
-        }`,
-      }
-    : { ...req.body };
-  // la méthode updateOne() dans notre modèle Thing nous permet de mettre à jour le Thing qui correspond à l'objet que nous passons comme premier argument.
-  // Nous utilisons aussi le paramètre id passé dans la demande, et le remplaçons par le Thing passé comme second argument.
-  Sauces.updateOne(
-    { _id: req.params.id },
-    { ...saucesObject, _id: req.params.id }
-  )
-    .then(() => res.status(200).json({ message: "Objet modifié !" }))
-    .catch((error) => res.status(400).json({ error }));
+exports.modifySauce = async (req, res, next) => {
+	//On cherche la sauce à modifier
+	const sauceDB = await Sauces.findOne({ _id: req.params.id });
+	if (sauceDB == null) {
+		return res.status(404).json({ message: "Sauce introuvable." });
+	}
+
+	//Vérification de l'autorisation de l'utilisateur
+	if (sauceDB.userId !== req.auth.userId) {
+		return res.status(403).json({
+			message: "Vous n'êtes pas autorisé à effectuer cette action.",
+		});
+	}
+
+	//s'il y a un fichier image dans la req : supprimer l'image actuelle
+	if (req.file) {
+		try {
+			//récupérer le nom du fichier image
+			const filename = sauceDB.imageUrl.split("/images/")[1];
+			//effacer le fichier image
+			fs.unlink(`images/${filename}`, (error) => {
+				if (error) throw error;
+			});
+		} catch (error) {
+			return res
+				.status(500)
+				.json({
+					error: error,
+					message: "Impossible de remplacer l/'image.",
+				});
+		}
+	}
+
+	//mettre à jour la sauce en gérant avec fichier ou sans fichier
+	try {
+		//est-ce qu'il y a un fichier image dans la req ?   ?=oui   :=non
+		const saucesObject = req.file ? {
+					...JSON.parse(req.body.sauce),
+					imageUrl: `${req.protocol}://${req.get("host")}/images/${
+						req.file.filename
+					}`,
+			  }
+			: { ...req.body };
+		await Sauces.updateOne(
+			{ _id: req.params.id },
+			{ ...saucesObject, _id: req.params.id }
+		);
+		return res.status(200).json({ message: "La sauce a été modifiée." });
+	} catch (error) {
+		return res.status(500).json({
+			error: error,
+			message: "Impossible de modifier la sauce.",
+		});
+	}
 };
 
-// la route pour "supprimer"
-exports.deleteSauce = (req, res, next) => {
-  //on trouve l'objet dans la base de donnée
-  Sauces.findOne({ _id: req.params.id })
-    //on le trouve
-    .then((sauces) => {
-      // on extrait le nom du fichier à supprimer
-      const filename = sauces.imageUrl.split("/images/")[1];
-      // on le supprime avec "unlink"
-      fs.unlink(`images/${filename}`, () => {
-        // on fais la suppression dans la base
-        Sauces.deleteOne({ _id: req.params.id })
-          .then(() => res.status(200).json({ message: "Objet supprimé !" }))
-          .catch((error) => res.status(400).json({ error }));
-      });
-    })
-    .catch((error) => res.status(500).json({ error }));
+
+
+exports.deleteSauce = async (req, res, next) => {
+	//trouver la sauce à supprimer dans la DB pour suppprimer aussi le fichier correspondant sur le serveur
+	try {
+		const sauce = await Sauces.findOne({ _id: req.params.id });
+
+		//vérification que userId connecté est identique au userId qui a créé la sauce
+		if (sauce.userId !== req.auth.userId) {
+			return res.status(403).json({
+				error: error,
+				message: "Vous n'êtes pas autorisé à effectuer cette action.",
+			});
+		}
+
+		const filename = sauce.imageUrl.split("/images/")[1];
+		fs.unlink(`images/${filename}`, async () => {
+			try {
+				//supprimer la sauce (fonction callback de unlink)
+				await Sauces.deleteOne({ _id: req.params.id });
+				return res
+					.status(200)
+					.json({ message: "La sauce a été supprimée." });
+			} catch (error) {
+				return res.status(400).json({
+					error: error,
+					message: "Impossible de supprimer la sauce.",
+				});
+			}
+		});
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ error: error, message: "Action impossible." });
+	}
 };
 
 // on recupere un seul objet

@@ -16,8 +16,6 @@ const limiter = rateLimit({
 
 app.use(limiter);
 app.use(helmet({
-  // crossOriginEmbedderPolicy: false,
-  
     crossOriginResourcePolicy: false
   
 }));
